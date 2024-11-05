@@ -1,14 +1,14 @@
-import os
 import cv2
-import numpy as np
-import pytesseract
 import easyocr
 from ultralytics import YOLO
 from ultralytics.utils.plotting import Annotator, colors
+import csv
+
 
 reader = easyocr.Reader(['en'])
 tensorrt_model = YOLO("best.engine")
 
+# Load video
 video_path = "video.mp4"
 cap = cv2.VideoCapture(video_path)
 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -17,17 +17,20 @@ results_dict = {}
 frame_nmr = 0
 vehicle_track_ids = []
 
+# Read video frame by frame
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
-    cv2.rectangle(frame, (0, height-100), (width, height-400), (256, 256, 256), 2)
+
+    # Detect license plate
     results = tensorrt_model(frame)
     frame_results = {}
 
     for result in results:
         boxes = result.boxes
         annotator = Annotator(frame, line_width=2, example=str(tensorrt_model.names))
+
 
         for box in boxes:
             xyxy = box.xyxy[0].tolist()
@@ -69,7 +72,7 @@ cap.release()
 cv2.destroyAllWindows()
 
 output_csv_path = "license_plate_results.csv"
-import csv
+
 
 with open(output_csv_path, mode='w', newline='') as file:
     writer = csv.writer(file)
